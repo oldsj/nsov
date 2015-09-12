@@ -1,0 +1,18 @@
+#{{ ansible_managed }}
+
+protocols = imaps
+ssl = required
+ssl_key = </etc/ssl/private/{{ domain }}.key
+ssl_cert = </etc/ssl/certs/{{ domain }}_combined.pem 
+mail_location = maildir:~/mails
+listen = *, [::]
+
+userdb {
+  driver = passwd
+  args = blocking=no
+}
+
+passdb {
+  driver = pam
+  args = 
+}
