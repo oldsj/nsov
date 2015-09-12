@@ -1,5 +1,6 @@
+#{{ ansible_managed }}
 user www-data;
-worker_processes 1;
+worker_processes {{ ansible_processor_vcpus }};
 worker_priority 15;
 pid /run/nginx.pid;
 
@@ -65,8 +66,8 @@ http {
   include /etc/nginx/conf.d/*.conf;
   include /etc/nginx/sites-enabled/*;
  
-  ssl_certificate /etc/ssl/certs/jamesolds.me_combined.pem;
-  ssl_certificate_key /etc/ssl/private/jamesolds.me.key;
+  ssl_certificate /etc/ssl/certs/{{ domain }}_combined.pem;
+  ssl_certificate_key /etc/ssl/private/{{ domain }}.key;
 
   # enable session resumption to improve https performance
   # http://vincent.bernat.im/en/blog/2011-ssl-session-reuse-rfc5077.html
@@ -85,7 +86,7 @@ http {
   # OpenDNS resolver
   resolver 208.67.222.222;
   ssl_stapling on;
-  ssl_trusted_certificate /etc/ssl/certs/jamesolds.me_ca.pem;
+  ssl_trusted_certificate /etc/ssl/certs/{{ domain }}_ca.pem;
 
   server {
     listen 0.0.0.0:80 default_server;
