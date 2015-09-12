@@ -1,0 +1,16 @@
+#{{ ansible_managed }}
+pki {{ mail_server_hostname }} key "/etc/ssl/private/{{ domain }}.key"
+pki {{ mail_server_hostname }} certificate "/etc/ssl/certs/{{ domain }}_combined.pem"
+
+listen on eth0 port 25 hostname {{ mail_server_hostname }} tls pki {{ mail_server_hostname }}
+listen on eth0 port 587 hostname {{ mail_server_hostname }} tls-require pki {{ mail_server_hostname }} auth mask-source
+
+listen on lo port 10029 tag DKIM
+accept from local tagged DKIM for any relay
+
+
+table aliases file:/etc/aliases
+
+accept from any for domain "{{ domain }}" alias <aliases> deliver to maildir "~/mails"
+
+accept from local for any relay via smtp://127.0.0.1:10028
