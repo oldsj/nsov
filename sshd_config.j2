@@ -1,0 +1,24 @@
+#{{ ansible_managed }}
+# HostKeys for protocol version 2
+Port 14141
+HostKey /etc/ssh/ssh_host_ed25519_key
+#Privilege Separation is turned on for security
+UsePrivilegeSeparation sandbox
+
+KexAlgorithms {{ kex_algorithms }}
+Ciphers {{ ciphers }}
+MACs {{ macs }}
+
+# Lifetime and size of ephemeral version 1 server key
+KeyRegenerationInterval 1800
+
+# Logging
+LogLevel VERBOSE
+
+# Authentication:
+PermitRootLogin no
+AuthenticationMethods publickey
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+UsePAM yes
+Subsystem sftp  /usr/lib/ssh/sftp-server
