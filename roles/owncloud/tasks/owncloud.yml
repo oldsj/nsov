@@ -25,6 +25,13 @@
   command: postgresql-setup --initdb 
   when: not postgresql_initdb.stat.exists
 
+- name: Postgres Auth Config
+  replace:
+    dest: /var/lib/pgsql/data/pg_hba.conf 
+    regexp: "ident"
+    replace: "md5"
+  notify: restart postgresql
+
 - name: Enable postgresql server
   service: name=postgresql state=started enabled=yes
 
@@ -39,7 +46,6 @@
     name: "{{ owncloud_db_username }}"
     password: "{{ owncloud_db_password }}" 
     state: present
-  sudo: no
 
 - name: Create database for ownCloud
   postgresql_db: 
@@ -55,13 +61,13 @@
 
 - name: Check if ownCloud is configured
   stat:
-    path: '/var/www/owncloud/config/config.php'
+    path: '/usr/share/owncloud/config/config.php'
   register: owncloud_config_file
 
 - name: Install ownCloud autoconfig file
   template:
     src: autoconfig.php.j2
-    dest: '/var/www/owncloud/config/autoconfig.php'
+    dest: '/usr/share/owncloud/config/autoconfig.php'
     owner: 'nginx'
     group: 'nginx'
   when: owncloud_config_file is defined and not owncloud_config_file.stat.exists
@@ -69,32 +75,66 @@
 - name: Install ownCloud default config file
   template:
     src: config.php.j2
-    dest: '/var/www/owncloud/config/config.php'
+    dest: '/usr/share/owncloud/config/config.php'
     owner: 'nginx'
     group: 'nginx'
     mode: 0640
   when: owncloud_config_file is defined and not owncloud_config_file.stat.exists
 
 - name: Configure php-fpm pool for ownCloud
-  template: src=www.conf.j2 dest=/etc/php5/fpm/pool.d/www.conf owner=root group=root
-  notify: restart php5-fpm
+  template: 
+    src: www.conf.j2 
+    dest: /etc/php-fpm.d/www.conf 
+    owner: root 
+    group: root
+  notify: restart php-fpm
 
 - name: "Disable legacy 'raw post data' in php-fpm"
   lineinfile: 
-    dest: /etc/php5/fpm/php.ini 
+    dest: /etc/php.ini 
     regexp: ";always_populate_raw_post_data = -1" 
     line: "always_populate_raw_post_data = -1"
-  notify: restart php5-fpm
+  notify: restart php-fpm
+
+- name: Enable php-fpm
+  service: name=php-fpm enabled=yes state=started
 
 - name: Configure Nginx for ownCloud
-  template: src=owncloud.j2 dest=/etc/nginx/sites-available/owncloud.conf owner=root group=root
+  template: 
+    src: owncloud.j2 
+    dest: /etc/nginx/sites-available/owncloud.conf
+    owner: root 
+    group: root
   notify: restart nginx
 
 - name: Enable the owncloud site
   file: src=/etc/nginx/sites-available/owncloud.conf dest=/etc/nginx/sites-enabled/owncloud.conf state=link
   notify: restart nginx
 
+- name: Enable redis 
+  service: name=redis enabled=yes state=started
+
 - name: Install ownCloud cronjob
-  cron: name="ownCloud" user="www-data" minute="*/15" 
-        job="php -f /var/www/owncloud/cron.php > /dev/null 2>&1"
+  cron: 
+    name: "ownCloud"
+    user: "nginx" 
+    minute: "*/15" 
+    job: "php -f /usr/share/owncloud/cron.php > /dev/null 2>&1"
+- name: Configure ownCloud directory permissions
+  file:
+    path: /usr/share/owncloud
+    state: directory
+    owner: nginx
+    group: nginx
+    recurse: yes
+
+- name: ownCloud config directory permissions
+  file:
+    path: /etc/owncloud
+    state: directory
+    owner: nginx
+    group: nginx
+    recurse: yes
+  tags: permish
+
 
