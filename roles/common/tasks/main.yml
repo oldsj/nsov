@@ -1,0 +1,41 @@
+---
+# Defines tasks applicable across all machines in the infrastructure.
+- name: Upgrade all safe packages
+  dnf: name=* state=latest
+
+- name: Install necessities and nice-to-haves
+  dnf: name={{ item }} state=latest
+  with_items:
+    - htop
+    - iftop
+    - iotop
+    - vim
+    - firewalld
+    - dnf-automatic
+    - powerline
+
+- name: Configure powerline for Bash
+  template:
+    src: bashrc.j2
+    dest: /home/{{ main_user_name }}/.bashrc
+    owner: "{{ main_user_name }}"
+    group: "{{ main_user_name }}"
+  tags: bash
+
+- name: Set Hostname  
+  hostname: name={{ hostname }}.{{ domain }}
+  tags: hostname
+
+- name: Enable Firewall
+  service: name=firewalld enabled=yes state=started
+
+- name: Configure Automatic Updates
+  template: src=automatic.conf.j2 dest=/etc/dnf/automatic.conf owner=root group=root
+
+- name: Enable Automatic Updates
+  service: name=dnf-automatic.timer enabled=yes state=started
+ 
+- include: tls.yml tags=tls
+- include: security.yml tags=security
+- include: nginx.yml tags=nginx
+

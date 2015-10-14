@@ -1,0 +1,29 @@
+[DEFAULT]
+ignoreip  = 127.0.0.1 {{ ansible_default_ipv4.address }} {{ ' '.join(friendly_networks) }}
+bantime   = 86400
+maxretry  = 5
+findtime  = 3600
+mta       = sendmail
+destemail = root
+banaction = firewallcmd-ipset
+backend   = systemd
+action    = %(action_mwl)s
+
+# JAILS
+[sshd]
+enabled   = true
+port      = {{ sshd_port }}
+
+[sshd-ddos]
+enabled   = true
+port      = {{ sshd_port }}
+
+[owncloud]
+enabled   = true
+filter    = owncloud
+port      = https
+logpath   = /var/log/owncloud.log
+
+[pam-generic]
+enabled   = true
+

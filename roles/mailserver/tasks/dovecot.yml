@@ -1,0 +1,15 @@
+- name: Install Dovecot 
+  dnf: name=dovecot state=latest
+
+- name: Configure Dovecot
+  template: src=dovecot.conf.j2 dest=/etc/dovecot/dovecot.conf
+  notify: restart dovecot
+
+- name: Enable Dovecot
+  service: name=dovecot enabled=yes state=started
+
+- name: Set firewall rules for Dovecot
+  firewalld: port={{ item }} state=enabled permanent=yes immediate=yes
+  with_items:
+    - 993/tcp
+

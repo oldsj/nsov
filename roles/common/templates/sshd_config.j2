@@ -1,0 +1,22 @@
+#{{ ansible_managed }}
+#Privilege Separation is turned on for security
+UsePrivilegeSeparation sandbox
+
+KexAlgorithms {{ kex_algorithms }}
+Ciphers {{ ciphers }}
+MACs {{ macs }}
+
+# Lifetime and size of ephemeral version 1 server key
+KeyRegenerationInterval 1800
+
+# Logging
+LogLevel VERBOSE
+
+# Authentication:
+PermitRootLogin no
+AuthenticationMethods publickey
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+UsePAM yes
+Subsystem sftp  /usr/lib/ssh/sftp-server
+

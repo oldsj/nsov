@@ -1,0 +1,26 @@
+#{{ ansible_managed }}
+# specify what address/port DKIMproxy should listen on
+listen    127.0.0.1:10028
+
+# specify what address/port DKIMproxy forwards mail to
+relay     127.0.0.1:10029
+
+# specify what domains DKIMproxy can sign for (comma-separated, no spaces)
+domain    {{ domain }}
+
+# specify what signatures to add
+signature dkim(c=relaxed)
+signature domainkeys(c=nofws)
+
+# specify location of the private key
+keyfile   /var/lib/dkimproxy/private.key
+
+# specify the selector (i.e. the name of the key record put in DNS)
+selector  mail
+
+# control how many processes DKIMproxy uses
+#  - more information on these options (and others) can be found by
+#    running `perldoc Net::Server::PreFork'.
+min_servers 1
+min_spare_servers 1
+

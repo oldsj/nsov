@@ -1,0 +1,24 @@
+---
+
+- name: Install OpenSSL
+  dnf: name=openssl state=latest
+
+- name: Generate dhparm.pem
+  command: openssl dhparam -out /etc/pki/dhparam.pem 2048 creates=/etc/pki/dhparam.pem
+
+- name: Copy TLS private key into place
+  copy: 
+    src: /home/james/.pki/tls/{{ domain }}.key 
+    dest: /etc/pki/tls/private/{{ domain }}.key 
+    group: root
+    owner: root
+    mode: 0600
+
+- name: Copy TLS combined public certificate into place
+  copy: 
+    src: /home/james/.pki/tls/{{ domain }}_combined.crt 
+    dest: /etc/pki/tls/certs/{{ domain }}_combined.crt 
+    group: root 
+    owner: root 
+    mode: 0600
+

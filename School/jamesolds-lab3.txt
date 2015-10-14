@@ -1,0 +1,91 @@
+SQL> 
+SQL> DROP TABLE departments CASCADE CONSTRAINTS;
+DROP TABLE departments CASCADE CONSTRAINTS
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+SQL> 
+SQL> CREATE TABLE departments (
+  2  	     dept_no		     NUMBER(3) NOT NULL,
+  3  	     department 	     VARCHAR2(30) NOT NULL,
+  4    student_number number(4),
+  5  	     CONSTRAINT department_pk PRIMARY KEY (dept_no),
+  6  	     constraint ck_st_number check (student_number < 100)
+  7  	     );
+
+Table created.
+
+SQL> 
+SQL> DROP TABLE students CASCADE CONSTRAINTS;
+DROP TABLE students CASCADE CONSTRAINTS
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+SQL> 
+SQL> CREATE TABLE students (
+  2    student_id	NUMBER(5) PRIMARY KEY,
+  3    first_name	VARCHAR2(20) not null,
+  4    last_name	VARCHAR2(20) not null,
+  5    major		VARCHAR2(30),
+  6    dept_no			NUMBER(2)
+  7    );
+
+Table created.
+
+SQL> 
+SQL> 
+SQL> ALTER TABLE students
+  2  ADD CONSTRAINT dept_student_fk FOREIGN KEY (dept_no) REFERENCES departments (dept_no);
+
+Table altered.
+
+SQL> 
+SQL> delete from departments cascade;
+
+0 rows deleted.
+
+SQL> Insert into departments values( 10, 'Chemistry', null);
+
+1 row created.
+
+SQL> Insert into departments values( 20, 'Physics', null);
+
+1 row created.
+
+SQL> Insert into departments values( 30, 'Biology', null);
+
+1 row created.
+
+SQL> 
+SQL> delete from students cascade;
+
+0 rows deleted.
+
+SQL> Insert into students values( 100, 'John','Smith','Chemistry', 10);
+
+1 row created.
+
+SQL> Insert into students values( 101, 'Larry', 'Brown', 'Biology', 30);
+
+1 row created.
+
+SQL> Insert into students values( 102, 'Scott','Johnson','Physics', 20);
+
+1 row created.
+
+SQL> Insert into students values( 103, 'Jane','Woods','Chemistry', 10);
+
+1 row created.
+
+SQL> commit;
+
+Commit complete.
+
+SQL> 
+SQL> 
+SQL> 
+SQL> 	     set echo off

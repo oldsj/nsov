@@ -1,0 +1,20 @@
+- name: systemctl-reload
+  command: systemctl daemon-reload
+
+- name: restart opensmtpd
+  service: name=opensmtpd enabled=yes state=restarted
+
+- name: restart postfix
+  service: name=postfix state=restarted
+
+- name: newaliases
+  command: postalias /etc/aliases 
+
+- name: restart dovecot
+  service: name=dovecot state=restarted
+
+- name: restart opendkim 
+  service: name=opendkim state=restarted
+
+- name: restart solr
+  service: name=tomcat6 state=restarted

@@ -1,0 +1,51 @@
+- name: Install Postfix and related packages
+  dnf: name=postfix state=latest
+
+- name: Create postfix maps directory
+  file: 
+    path: /etc/postfix/maps 
+    state: directory 
+    owner: root 
+    group: root
+
+- name: Copy smtp_header_checks.pcre
+  copy: 
+    src: etc_postfix_maps_smtp_header_checks.pcre 
+    dest: /etc/postfix/maps/smtp_header_checks.pcre 
+    owner: root 
+    group: root
+
+- name: Copy main.cf
+  template: 
+    src: main.cf 
+    dest: /etc/postfix/main.cf 
+    owner: root 
+    group: root
+  notify: restart postfix
+
+- name: Copy master.cf
+  template: 
+    src: master.cf 
+    dest: /etc/postfix/master.cf 
+    owner: root 
+    group: root
+  notify: restart postfix
+
+- name: Check if Postfix is configure for chroot
+  stat:
+    path: '/var/spool/postfix/lib'
+  register: postfix_chroot
+
+- name: Postfix chroot initial setup
+  command: sh /usr/share/doc/postfix/examples/chroot-setup/LINUX2
+  when: not postfix_chroot.stat.exists 
+
+- name: Enable Postfix
+  service: name=postfix enabled=yes state=started
+
+- name: Set firewall rules for Postfix
+  firewalld: port={{ item }} state=enabled permanent=yes immediate=yes
+  with_items:
+    - 25/tcp
+    - 465/tcp
+

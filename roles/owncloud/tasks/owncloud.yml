@@ -1,0 +1,100 @@
+---
+
+- name: Install Postgres 
+  dnf: name={{ item }} state=latest
+  with_items:
+    - postgresql-server
+    - postgresql-contrib
+    - python-psycopg2
+
+- name: Install ownCloud dependencies
+  dnf: name={{ item }} state=latest
+  with_items:
+    - owncloud
+    - php-fpm
+    - php-pgsql
+    - redis
+    - php-pecl-redis
+
+- name: Check if postgresql is configured
+  stat:
+    path: '/var/lib/pgsql/data/pg_hba.conf'
+  register: postgresql_initdb
+
+- name: postgresql initial db config
+  command: postgresql-setup --initdb 
+  when: not postgresql_initdb.stat.exists
+
+- name: Enable postgresql server
+  service: name=postgresql state=started enabled=yes
+
+- name: Set postgres password
+  command: sudo -u {{ db_admin_username }} psql -d {{ db_admin_username }} -c "ALTER USER postgres with  password '{{ db_admin_password }}';"
+
+- name: Create database user for ownCloud
+  postgresql_user: 
+    login_host: localhost 
+    login_user: "{{ db_admin_username }}"
+    login_password: "{{ db_admin_password }}" 
+    name: "{{ owncloud_db_username }}"
+    password: "{{ owncloud_db_password }}" 
+    state: present
+  sudo: no
+
+- name: Create database for ownCloud
+  postgresql_db: 
+    login_host: localhost 
+    login_user: "{{ db_admin_username }}"
+    login_password: "{{ db_admin_password }}" 
+    name: "{{ owncloud_db_database }}"
+    owner: "{{ owncloud_db_username }}"
+    state: present
+
+- name: Create owncloud data directory
+  file: state=directory path=/usr/share/owncloud/data owner=nginx group=nginx
+
+- name: Check if ownCloud is configured
+  stat:
+    path: '/var/www/owncloud/config/config.php'
+  register: owncloud_config_file
+
+- name: Install ownCloud autoconfig file
+  template:
+    src: autoconfig.php.j2
+    dest: '/var/www/owncloud/config/autoconfig.php'
+    owner: 'nginx'
+    group: 'nginx'
+  when: owncloud_config_file is defined and not owncloud_config_file.stat.exists
+
+- name: Install ownCloud default config file
+  template:
+    src: config.php.j2
+    dest: '/var/www/owncloud/config/config.php'
+    owner: 'nginx'
+    group: 'nginx'
+    mode: 0640
+  when: owncloud_config_file is defined and not owncloud_config_file.stat.exists
+
+- name: Configure php-fpm pool for ownCloud
+  template: src=www.conf.j2 dest=/etc/php5/fpm/pool.d/www.conf owner=root group=root
+  notify: restart php5-fpm
+
+- name: "Disable legacy 'raw post data' in php-fpm"
+  lineinfile: 
+    dest: /etc/php5/fpm/php.ini 
+    regexp: ";always_populate_raw_post_data = -1" 
+    line: "always_populate_raw_post_data = -1"
+  notify: restart php5-fpm
+
+- name: Configure Nginx for ownCloud
+  template: src=owncloud.j2 dest=/etc/nginx/sites-available/owncloud.conf owner=root group=root
+  notify: restart nginx
+
+- name: Enable the owncloud site
+  file: src=/etc/nginx/sites-available/owncloud.conf dest=/etc/nginx/sites-enabled/owncloud.conf state=link
+  notify: restart nginx
+
+- name: Install ownCloud cronjob
+  cron: name="ownCloud" user="www-data" minute="*/15" 
+        job="php -f /var/www/owncloud/cron.php > /dev/null 2>&1"
+

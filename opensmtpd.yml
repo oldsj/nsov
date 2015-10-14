@@ -1,0 +1,44 @@
+---
+
+- name: Install OpenDKIM and related packages
+  dnf: name=opendkim state=latest
+
+- name: Create OpenDKIM config directory
+  file: state=directory path=/etc/opendkim group=opendkim owner=opendkim
+
+- name: Create OpenDKIM key directories
+  file: state=directory path=/etc/opendkim/keys/{{ domain }} group=opendkim owner=opendkim
+
+- name: Generate OpenDKIM keys
+  command: opendkim-genkey -r -d {{ domain }} -D /etc/opendkim/keys/{{ domain }}/ creates=/etc/opendkim/keys/{{ domain }}/default.private
+
+- name: Put opendkim.conf into place
+  copy: src=etc_opendkim.conf dest=/etc/opendkim.conf owner=opendkim group=opendkim
+  notify:
+    - restart opendkim
+    - restart postfix
+
+- name: Put additional OpenDKIM configuration files into place
+  template: src=etc_opendkim_{{ item }}.j2 dest=/etc/opendkim/{{ item }} owner=opendkim group=opendkim
+  with_items:
+    - KeyTable
+    - SigningTable
+    - TrustedHosts
+  notify:
+    - restart opendkim
+    - restart postfix
+
+- name: Set OpenDKIM config directory permissions
+  file: state=directory path=/etc/opendkim
+          group=opendkim owner=opendkim mode=700 recurse=yes
+
+- command: cat /etc/opendkim/keys/{{ domain }}/default.public
+  register: dns_dkim_key
+
+- name: Put this dkim key in your dns txt record..
+  debug: var=dns_dkim_key
+
+  notify:
+    - restart opendkim
+    - restart postfix
+

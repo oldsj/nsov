@@ -1,0 +1,40 @@
+#{{ ansible_managed }}
+
+protocols = imap
+ssl = required
+disable_plaintext_auth = no 
+ssl_protocols = !SSLv2 !SSLv3
+ssl_cipher_list = ALL:!ADH:!LOW:!SSLv2:!SSLv3:!EXP:!aNULL:+HIGH:+MEDIUM
+ssl_prefer_server_ciphers = yes
+ssl_dh_parameters_length = 2048
+ssl_key = </etc/pki/tls/private/{{ domain }}.key
+ssl_cert = </etc/pki/tls/certs/{{ domain }}_combined.crt
+mail_privileged_group = mail
+mail_location = maildir:~/Maildir
+listen = *, [::]
+
+auth_mechanisms = plain login
+
+service imap-login {
+  inet_listener imap {
+    port = 0
+  }
+}
+
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    group = postfix
+    mode = 0660
+    user = postfix
+  }
+}
+
+userdb {
+  driver = passwd
+  args = blocking=no
+}
+
+passdb {
+  driver = pam
+  args = 
+}

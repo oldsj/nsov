@@ -1,0 +1,22 @@
+
+- name: Install OpenSMTPD
+  dnf: name=opensmtpd state=latest
+
+- name: Configure OpenSMTPD 
+  template: src=smtpd.conf.j2 dest=/etc/opensmtpd/smtpd.conf owner=root group=root
+  notify: opensmtpd
+
+- name: Configure mail aliases
+  template: src=aliases.j2 dest=/etc/aliases owner=root group=root
+  notify: newaliases
+
+- name: Enable OpenSMTPD
+  service: name=opensmtpd enabled=yes state=started
+
+- name: Set firewall rules for OpenSMTPD
+  firewalld: port={{ item }} state=enabled permanent=yes immediate=yes
+  with_items:
+    - 25/tcp
+    - 587/tcp
+
+

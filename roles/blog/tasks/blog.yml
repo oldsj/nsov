@@ -1,0 +1,14 @@
+
+- name: Create directory for blog HTML
+  file: state=directory path=/var/www/blog group=nginx owner={{ main_user_name }}
+
+- name: Configure nginx for the blog
+  template: src=blog.conf.j2 dest=/etc/nginx/sites-available/blog.conf group=root owner=root
+
+- name: Enable blog site
+  file: 
+    src: '/etc/nginx/sites-available/blog.conf'
+    dest: '/etc/nginx/sites-enabled/blog.conf'
+    state: link
+  notify: restart nginx
+

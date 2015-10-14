@@ -1,0 +1,26 @@
+---
+# This is the top-level playbook that defines our entire infrastructure.
+
+- hosts: prod
+  user: james
+  sudo: True
+  gather_facts: True
+  vars_files:
+    - vars/defaults.yml
+    - vars/{{ 'testing' if testing is defined else 'user' }}.yml
+
+  roles:
+    - common
+    - mailserver
+#    - webmail
+    - blog
+#    - ircbouncer
+#    - xmpp
+    - owncloud
+#    - vpn
+#    - tarsnap
+#    - news
+#    - git
+#    - newebe
+#    - readlater
+#    - monitoring  # Monitoring role should be last. See roles/monitoring/README.md
